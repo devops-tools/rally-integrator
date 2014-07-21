@@ -10,7 +10,7 @@ namespace RallyIntegrator.Library
 {
     public static class Extensions
     {
-        public static Changeset ToRallyChangeset(this Changeset tfsChangeset, Ldap ldap, Api.Rally rally)
+        public static Changeset ToRallyChangeset(this Changeset tfsChangeset, Ldap ldap, Handler.Rally rally)
         {
             if (tfsChangeset == null)
                 return null;
@@ -43,7 +43,7 @@ namespace RallyIntegrator.Library
             return isMatch;
         }
 
-        public static bool ContainsAccessibleRallyReference(this Changeset changeset, Api.Rally rally)
+        public static bool ContainsAccessibleRallyReference(this Changeset changeset, Handler.Rally rally)
         {
             var rallyRefs = changeset.GetRallyReferences().ToArray();
             string type;
@@ -51,7 +51,7 @@ namespace RallyIntegrator.Library
             return accessibleReferenceFound;
         }
 
-        public static bool IsRelevant(this Changeset changeset, Api.Rally rally)
+        public static bool IsRelevant(this Changeset changeset, Handler.Rally rally)
         {
             return changeset.Changes.Any(x => x.Path.StartsWith(Tfs.Repository))
                 && changeset.ContainsRallyReference()

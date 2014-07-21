@@ -50,7 +50,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Api\Rally.cs" />
+    <Compile Include="Handler\Rally.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Handler\Ldap.cs" />
     <Compile Include="Handler\Tfs.cs" />

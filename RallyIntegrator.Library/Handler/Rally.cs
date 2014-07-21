@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 using Rally.RestApi;
 using RallyIntegrator.Library.Model;
 
-namespace RallyIntegrator.Library.Api
+namespace RallyIntegrator.Library.Handler
 {
     public class Rally
     {

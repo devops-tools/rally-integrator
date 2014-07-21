@@ -9,7 +9,7 @@ namespace RallyIntegrator.Library
     public static class Integrator
     {
         static readonly Ldap Ldap = new Ldap();
-        static readonly Api.Rally Rally = new Api.Rally();
+        static readonly Handler.Rally Rally = new Handler.Rally();
 
         public static void Process(IEnumerable<int> revisions)
         {
