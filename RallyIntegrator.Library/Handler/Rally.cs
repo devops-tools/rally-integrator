@@ -17,7 +17,7 @@ namespace RallyIntegrator.Library.Handler
         private static string Username { get { return ConfigurationManager.AppSettings.Get("RallyUsername"); } }
         private static string Password { get { return ConfigurationManager.AppSettings.Get("RallyPassword"); } }
         private static string Project { get { return ConfigurationManager.AppSettings.Get("RallyProject"); } }
-
+        
 
         public string GetObjectId(string objectType, string property, string value)
         {
@@ -29,6 +29,21 @@ namespace RallyIntegrator.Library.Handler
             if (queryResult.Results.Any())
             {
                 var result = queryResult.Results.First();
+                return (string) result["_ref"];
+            }
+            return null;
+        }
+
+        public string GetBuildObjectId(Build build)
+        {
+            var queryResult = Api.Query(new Request("build")
+            {
+                Fetch = new List<string> { "Uri" },
+                Query = new Query("Number", Query.Operator.Equals, build.Number)
+            });
+            if (queryResult.Results.Any(x => build.Uri.Equals((string)x["Uri"], StringComparison.InvariantCultureIgnoreCase)))
+            {
+                var result = queryResult.Results.First(x => build.Uri.Equals((string)x["Uri"], StringComparison.InvariantCultureIgnoreCase));
                 return (string) result["_ref"];
             }
             return null;
@@ -166,7 +181,7 @@ namespace RallyIntegrator.Library.Handler
 
         public string Add(Build build, string changesetObjectId)
         {
-            var buildObjectId = GetObjectId("build", "Uri", build.Uri);
+            var buildObjectId = GetBuildObjectId(build);
             if (buildObjectId == null)
             {
                 var buildDefinitionObjectId = Add(build.BuildDefinition);
