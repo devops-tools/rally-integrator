@@ -22,6 +22,7 @@ namespace RallyIntegrator.Library
             {
                 Author = rallyUserId,
                 Changes = tfsChangeset.Changes,
+                Builds = tfsChangeset.Builds,
                 CommitTimestamp = tfsChangeset.CommitTimestamp,
                 Message = tfsChangeset.Message,
                 Repository = rallyRepositoryId,

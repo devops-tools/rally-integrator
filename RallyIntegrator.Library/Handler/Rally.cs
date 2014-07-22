@@ -16,6 +16,7 @@ namespace RallyIntegrator.Library.Handler
         private static RallyRestApi Api { get { return _api ?? (_api = new RallyRestApi(Username, Password)); } }
         private static string Username { get { return ConfigurationManager.AppSettings.Get("RallyUsername"); } }
         private static string Password { get { return ConfigurationManager.AppSettings.Get("RallyPassword"); } }
+        private static string Project { get { return ConfigurationManager.AppSettings.Get("RallyProject"); } }
 
 
         public string GetObjectId(string objectType, string property, string value)
@@ -107,8 +108,6 @@ namespace RallyIntegrator.Library.Handler
                 var changesetJson = new DynamicJsonObject(new Dictionary<string, object>
                 {
                     { "Author", changeset.Author },
-                    //{"Builds", new Dictionary<string, object>{ { "Build", "/project/17806613497" } }},
-                    //{"Changes", new Dictionary<string, object>{ { "Change", "/project/17806613497" } }},
                     { "CommitTimestamp", changeset.CommitTimestamp },
                     { "Message", changeset.Message },
                     { "Revision", changeset.Revision },
@@ -137,6 +136,69 @@ namespace RallyIntegrator.Library.Handler
             return changesetObjectId;
         }
 
+        public string Add(BuildDefinition buildDefinition)
+        {
+            var buildDefinitionObjectId = GetObjectId("buildDefinition", "Name", buildDefinition.Name);
+            if (buildDefinitionObjectId == null)
+            {
+                var buildDefinitionJson = new DynamicJsonObject(new Dictionary<string, object>
+                {
+                    { "Name", buildDefinition.Name },
+                    { "Description", buildDefinition.Description },
+                    { "Project", Project },
+                    { "Uri", buildDefinition.Uri }
+                });
+                var createResult = Api.Create("buildDefinition", buildDefinitionJson);
+                if (createResult.Success)
+                {
+                    buildDefinitionObjectId = createResult.Reference;
+                    Console.WriteLine("Build definition {0} created as {1}.", buildDefinition.Name, buildDefinitionObjectId);
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine("Failed to create build definition {0}.", buildDefinition.Name);
+                    Console.ResetColor();
+                }
+            }
+            return buildDefinitionObjectId;
+        }
+
+        public string Add(Build build, string changesetObjectId)
+        {
+            var buildObjectId = GetObjectId("build", "Uri", build.Uri);
+            if (buildObjectId == null)
+            {
+                var buildDefinitionObjectId = Add(build.BuildDefinition);
+                if (buildDefinitionObjectId != null)
+                {
+                    var buildJson = new DynamicJsonObject(new Dictionary<string, object>
+                    {
+                        { "BuildDefinition", buildDefinitionObjectId },
+                        { "Duration", build.Duration },
+                        { "Message", build.Message },
+                        { "Number", build.Number },
+                        { "Status", build.Status },
+                        { "Uri", build.Uri },
+                        { "Changesets", new Dictionary<string, object> { { "_ref", changesetObjectId } } }
+                    });
+                    var createResult = Api.Create("build", buildJson);
+                    if (createResult.Success)
+                    {
+                        buildObjectId = createResult.Reference;
+                        Console.WriteLine("Build {0}:{1} created as {2}.", build.BuildDefinition.Name, build.Number, buildObjectId);
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Console.WriteLine("Failed to create build {0}:{1}.", build.BuildDefinition.Name, build.Number);
+                        Console.ResetColor();
+                    }
+                }
+            }
+            return buildObjectId;
+        }
+
         private IEnumerable<string> GetChanges(string changesetObjectId)
         {
             var json = new WebClient { Credentials = new NetworkCredential(Username, Password) }.DownloadString(string.Concat(changesetObjectId, "/Changes"));
@@ -146,77 +208,4 @@ namespace RallyIntegrator.Library.Handler
                 : new string[]{};
         }
     }
-
-    
-            //var projectRef = "https://rally1.rallydev.com/slm/webservice/v2.0/project/17806613497";
-            //var repositoryRef = "https://rally1.rallydev.com/slm/webservice/v2.0/scmrepository/20691322881";
-            //var changesetRef = "https://rally1.rallydev.com/slm/webservice/v2.0/changeset/20691809495";
-
-            //Initialize the REST API
-            //RallyRestApi restApi = new RallyRestApi("robin.thijssen@ihs.com", "R@llydev");
-
-            //var task = restApi.GetByReference("/task/20461118446");
-            //var changeset = restApi.GetByReference("/changeset/20691809495");
-            //var artifacts = changeset["Artifacts"];
-            //artifacts.Add(task);
-            //changeset["Artifacts"] = new Dictionary<string, object> { { "_ref", "20461118446" } };
-            //var updateResult = restApi.Update("/changeset/20691809495", changeset);
-            //var toUpdate = new DynamicJsonObject();
-            //toUpdate["Changesets"] = new Dictionary<string, object> { { "Changeset", "/changeset/20691809495" } };
-            //var updateResult = restApi.Update("task", "20461118446", toUpdate);
-            //var x = updateResult.ToString();
-
-            //var changeset = new DynamicJsonObject(new Dictionary<string, object>
-            //{
-            //    {"Author", "/user/18948801540"},
-            //    //{"Builds", new Dictionary<string, object>{ { "Build", "/project/17806613497" } }},
-            //    //{"Changes", new Dictionary<string, object>{ { "Change", "/project/17806613497" } }},
-            //    {"CommitTimestamp", "2014-07-17T11:02:15.207Z"},
-            //    {"Message", "US21345: Implemented delete handler by adding delete messages to the queue (TA47420)."},
-            //    {"Revision", "62748"},
-            //    {"SCMRepository", "/scmrepository/20691322881"},
-            //    {"Uri", "http://gda-tfs-01:8080/tfs/VersionControl/Changeset.aspx?artifactMoniker=62748"}
-            //});
-            //var createResult = restApi.Create("changeset", changeset);
-            //var changesetRef = createResult.Reference;
-
-            //var scmrepository = new DynamicJsonObject(new Dictionary<string, object>
-            //{
-            //    { "Name", "$/Castle/Connect" },
-            //    { "Description", "IHS Connect" },
-            //    { "SCMType", "TFS" },
-            //    { "Uri", "http://gda-tfs-01:8080/tfs/emea-gdacollection" },
-            //    { "Projects", new Dictionary<string, object>{ { "Project", "/project/17806613497" } } }
-            //});
-            //var createResult = restApi.Create("scmrepository", scmrepository);
-            //var repoRef = createResult.Reference;
-
-            ////Update
-            //item = new DynamicJsonObject();
-            //item["Description"] = "Created with API";
-            //var updateResult = restApi.Update(createResult.Reference, item);
-
-            ////Get
-            //item = restApi.GetByReference(createResult.Reference);
-
-            ////Query for items
-            //var request = new Request("userstory")
-            //{
-            //    Fetch = new List<string>()
-            //    {
-            //        "Name",
-            //        "Description",
-            //        "FormattedID"
-            //    },
-            //    Query = new Query("Name", Query.Operator.Equals, "Test User Story")
-            //};
-
-            //var queryResult = restApi.Query(request);
-            //foreach(var result in queryResult.Results)
-            //{
-            //    //Process item
-            //}
-
-            //Delete the item
-            //OperationResult deleteResult = restApi.Delete(createResult.Reference);
 }

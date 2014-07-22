@@ -53,8 +53,11 @@
     <Compile Include="Handler\Rally.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Handler\Ldap.cs" />
+    <Compile Include="Handler\TeamCity.cs" />
     <Compile Include="Handler\Tfs.cs" />
     <Compile Include="Integrator.cs" />
+    <Compile Include="Model\Build.cs" />
+    <Compile Include="Model\BuildDefinition.cs" />
     <Compile Include="Model\Change.cs" />
     <Compile Include="Model\Changeset.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

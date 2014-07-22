@@ -52,7 +52,6 @@ namespace RallyIntegrator.ConsoleApplication
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("All done!");
             Console.ResetColor();
-            Console.ReadKey();
         }
 
         static void ShowHelp(OptionSet p)
