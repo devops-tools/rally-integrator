@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Net;
 using Newtonsoft.Json.Linq;
 using Rally.RestApi;
 using RallyIntegrator.Library.Model;
@@ -216,7 +215,7 @@ namespace RallyIntegrator.Library.Handler
 
         private IEnumerable<string> GetChanges(string changesetObjectId)
         {
-            var json = new WebClient { Credentials = new NetworkCredential(Username, Password) }.DownloadString(string.Concat(changesetObjectId, "/Changes"));
+            var json = WebHelper.DownloadString(string.Concat(changesetObjectId, "/Changes"), Username, Password);
             var x = JObject.Parse(json)["QueryResult"];
             return (int) x["TotalResultCount"] > 0
                 ? x["Results"].Select(change => (string)change["PathAndFilename"])

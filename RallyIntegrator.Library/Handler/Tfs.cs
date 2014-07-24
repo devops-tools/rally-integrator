@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Configuration;
 using System.Linq;
-using System.Net;
 using System.Xml.Linq;
 using RallyIntegrator.Library.Model;
 
@@ -19,9 +18,8 @@ namespace RallyIntegrator.Library.Handler
 
         public Changeset GetChangeset(string revision)
         {
-            var wc = new WebClient { Credentials = new NetworkCredential(Username, Password) };
             var url = string.Format(ChangesetUriFormat, Url, revision);
-            var root = XDocument.Parse(wc.DownloadString(new Uri(url)), LoadOptions.None).Root;
+            var root = XDocument.Parse(WebHelper.DownloadString(url, Username, Password), LoadOptions.None).Root;
             if (root != null)
             {
                 var ns = root.GetDefaultNamespace();
