@@ -20,7 +20,10 @@ namespace RallyIntegrator.Library.Handler
         private static string ChangeBuildsUriFormat { get { return ConfigurationManager.AppSettings.Get("TeamCityChangeBuildsUriFormat"); } }
         private static readonly Dictionary<string, BuildDefinition> BuildDefinitionCache = new Dictionary<string, BuildDefinition>();
 
-        private static readonly WebClient WebClient = new WebClient { Credentials = new NetworkCredential(Username, Password) };
+        public static WebClient WebClient
+        {
+            get { return new WebClient { Credentials = new NetworkCredential(Username, Password) }; }
+        }
 
         private string GetChangeId(string vcsRevision)
         {
@@ -29,7 +32,7 @@ namespace RallyIntegrator.Library.Handler
             if (root != null)
             {
                 var change = root.Element("change");
-                return change != null ? change.Attribute("id").Value : null;
+                return change != null ? change.GetAttributeValue("id") : null;
             }
             return null;
         }
@@ -39,7 +42,7 @@ namespace RallyIntegrator.Library.Handler
             var xml = WebClient.DownloadString(string.Format(ChangeBuildsUriFormat, Url, changeId));
             var root = XDocument.Parse(xml).Root;
             return root != null
-                ? root.Elements("build").Select(build => build.Attribute("id").Value)
+                ? root.Elements("build").Select(build => build.GetAttributeValue("id"))
                 : Enumerable.Empty<string>();
         }
 
@@ -52,16 +55,15 @@ namespace RallyIntegrator.Library.Handler
                 if (root != null)
                 {
                     var project = root.Element("project");
-                    if (project != null)
-                    {
+                    if (project != null && !BuildDefinitionCache.ContainsKey(buildTypeId))
                         BuildDefinitionCache.Add(buildTypeId, new BuildDefinition
                         {
-                            Name = root.Attribute("name").Value,
-                            Description = string.IsNullOrWhiteSpace(root.Attribute("description").Value) ? root.Attribute("id").Value : root.Attribute("description").Value,
-                            Project = project.Attribute("name").Value,
-                            Uri = root.Attribute("webUrl").Value
+                            Name = root.GetAttributeValue("name"),
+                            Description = string.IsNullOrWhiteSpace(root.GetAttributeValue("description")) ? root.GetAttributeValue("id") : root.GetAttributeValue("description"),
+                            Project = project.GetAttributeValue("name"),
+                            Uri = root.GetAttributeValue("webUrl")
                         });
-                    }
+
                 }
             }
             return BuildDefinitionCache.ContainsKey(buildTypeId)
@@ -75,22 +77,21 @@ namespace RallyIntegrator.Library.Handler
             var root = XDocument.Parse(xml).Root;
             if (root != null)
             {
-                var statusText = root.Element("statusText");
-                var startDate = root.Element("startDate");
-                var finishDate = root.Element("finishDate");
+                var startDate = root.GetElementValue("startDate");
+                var finishDate = root.GetElementValue("finishDate");
                 var duration = (startDate != null && finishDate != null)
-                    ? DateTimeOffset.ParseExact(finishDate.Value, "yyyyMMddTHHmmsszzz", CultureInfo.InvariantCulture) - DateTimeOffset.ParseExact(startDate.Value, "yyyyMMddTHHmmsszzz", CultureInfo.InvariantCulture)
+                    ? DateTimeOffset.ParseExact(finishDate, "yyyyMMddTHHmmsszzz", CultureInfo.InvariantCulture) - DateTimeOffset.ParseExact(startDate, "yyyyMMddTHHmmsszzz", CultureInfo.InvariantCulture)
                     : TimeSpan.Zero;
                 var buildType = root.Element("buildType");
-                return (startDate != null && statusText != null && buildType != null)
+                return (buildType != null)
                     ? new Build {
                         Duration = duration.TotalSeconds.ToString(CultureInfo.InvariantCulture),
-                        Message = statusText.Value,
-                        Number = root.Attribute("number").Value,
-                        Start = startDate.Value,
-                        Status = root.Attribute("status").Value,
-                        Uri = root.Attribute("webUrl").Value,
-                        BuildDefinition = GetBuildDefinition(buildType.Attribute("id").Value)
+                        Message = root.GetElementValue("statusText"),
+                        Number = root.GetAttributeValue("number"),
+                        Start = startDate,
+                        Status = root.GetAttributeValue("status"),
+                        Uri = root.GetAttributeValue("webUrl"),
+                        BuildDefinition = GetBuildDefinition(buildType.GetAttributeValue("id"))
                     }
                     : null;
             }
@@ -100,9 +101,13 @@ namespace RallyIntegrator.Library.Handler
         public IEnumerable<Build> GetBuilds(string vcsRevision)
         {
             var changeId = GetChangeId(vcsRevision);
-            var buildIds = GetBuildIds(changeId);
-            var builds = buildIds.Select(GetBuild).ToArray();
-            return builds;
+            if (changeId != null)
+            {
+                var buildIds = GetBuildIds(changeId);
+                var builds = buildIds.Select(GetBuild).ToArray();
+                return builds;
+            }
+            return Enumerable.Empty<Build>();
         }
     }
 }

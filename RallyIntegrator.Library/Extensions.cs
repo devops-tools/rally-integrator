@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using RallyIntegrator.Library.Handler;
 using RallyIntegrator.Library.Model;
 
@@ -34,12 +35,16 @@ namespace RallyIntegrator.Library
 
         public static IEnumerable<string> GetRallyReferences(this Changeset changeset)
         {
+            if (string.IsNullOrWhiteSpace(changeset.Message))
+                return Enumerable.Empty<string>();
             var regex = new Regex(@"((?i:(de|ta|us))\d{5})");
             return (regex.Matches(changeset.Message).Cast<object>().Where(x => x != null).Select(x => x.ToString().ToUpper()));
         }
 
         public static bool ContainsRallyReference(this Changeset changeset)
         {
+            if (string.IsNullOrWhiteSpace(changeset.Message))
+                return false;
             var isMatch = new Regex(@"((?i:(de|ta|us))\d{5})").IsMatch(changeset.Message);
             return isMatch;
         }
@@ -84,5 +89,24 @@ namespace RallyIntegrator.Library
                 yield return new ReadOnlyCollection<T>(array);
             }
         }
+
+        #region XML Extensions
+
+        public static string GetAttributeValue(this XElement xElement, XName xName)
+        {
+            return xElement.Attribute(xName) != null && !string.IsNullOrWhiteSpace(xElement.Attribute(xName).Value)
+                ? xElement.Attribute(xName).Value
+                : null;
+        }
+
+        public static string GetElementValue(this XElement xElement, XName xName)
+        {
+            var element = xElement.Element(xName);
+            return element != null && !string.IsNullOrWhiteSpace(element.Value)
+                ? element.Value
+                : null;
+        }
+
+        #endregion
     }
 }

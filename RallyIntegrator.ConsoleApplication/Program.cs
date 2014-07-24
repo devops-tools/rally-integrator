@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -17,11 +18,14 @@ namespace RallyIntegrator.ConsoleApplication
         public static void Main(string[] args)
         {
             var showHelp = false;
+            var processPreceedingChangesets = false;
+            const int preceedingChangesetCount = 20;
             var revisions = new List<string>();
 
             var optionSet = new OptionSet {
-                { "c|changeset=", "the {changesets} to be integrated.", c => revisions.Add (c.Trim(new []{' ', ',', ';'})) },
+                { "c|changeset=", "the {changesets} to be integrated.", v => revisions.Add (v.Trim(new []{' ', ',', ';'})) },
                 { "h|help",  "show this message and exit", v => showHelp = v != null },
+                { "i|ci",  "process preceeding changesets", v => processPreceedingChangesets = v != null },
             };
 
             try
@@ -41,10 +45,15 @@ namespace RallyIntegrator.ConsoleApplication
                 ShowHelp(optionSet);
                 return;
             }
+            if (processPreceedingChangesets && revisions.Count == 1)
+                revisions = Enumerable.Range(int.Parse(revisions.First()) - (preceedingChangesetCount - 1), preceedingChangesetCount).Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList();
+            if (!revisions.Any())
+                revisions = Enumerable.Range(55000, 8300).Select(x=>x.ToString(CultureInfo.InvariantCulture)).ToList();
             if (revisions.Count > PartitionSize)
             {
                 var parallelOptions = new ParallelOptions {MaxDegreeOfParallelism = Environment.ProcessorCount - 1};
-                Parallel.ForEach(revisions.Select(int.Parse).Partition(PartitionSize), parallelOptions, Integrator.Process);
+                var revisionPartitions = revisions.Select(int.Parse).Partition(PartitionSize).ToArray();
+                Parallel.ForEach(revisionPartitions, parallelOptions, Integrator.Process);
             }
             else
                 Integrator.Process(revisions.Select(int.Parse));

@@ -21,30 +21,33 @@ namespace RallyIntegrator.Library.Handler
         {
             var wc = new WebClient { Credentials = new NetworkCredential(Username, Password) };
             var url = string.Format(ChangesetUriFormat, Url, revision);
-            var xdoc = XDocument.Parse(wc.DownloadString(new Uri(url)), LoadOptions.None);
-            var ns = xdoc.Root.GetDefaultNamespace();
-            try
+            var root = XDocument.Parse(wc.DownloadString(new Uri(url)), LoadOptions.None).Root;
+            if (root != null)
             {
-                return new Changeset
+                var ns = root.GetDefaultNamespace();
+                if (root.Name == "Changeset")
                 {
-                    Revision = revision,
-                    Uri = url,
-                    Author = xdoc.Root.Attribute(ns + "cmtr").Value,
-                    CommitTimestamp = xdoc.Root.Attribute(ns + "date").Value,
-                    Message = xdoc.Root.Element(ns + "Comment").Value,
-                    Repository = Repository,
-                    Changes = xdoc.Root.Element(ns + "Changes").Elements(ns + "Change").Select(x => new Change
-                    {
-                        Action = x.Attribute(ns + "type").Value,
-                        Path = x.Element(ns + "Item").Attribute(ns + "item").Value,
-                        Uri = string.Format(ChangeUriFormat, Url, Uri.EscapeDataString(x.Element(ns + "Item").Attribute(ns + "item").Value), revision)
-                    })
-                };
+                    var changes = root.Element(ns + "Changes");
+                    return (changes != null)
+                        ? new Changeset
+                        {
+                            Revision = revision,
+                            Uri = url,
+                            Author = root.GetAttributeValue(ns + "cmtr"),
+                            CommitTimestamp = root.GetAttributeValue(ns + "date"),
+                            Message = root.GetElementValue(ns + "Comment"),
+                            Repository = Repository,
+                            Changes = changes.Elements(ns + "Change").Select(x => new Change
+                            {
+                                Action = x.Attribute(ns + "type").Value,
+                                Path = x.Element(ns + "Item").GetAttributeValue(ns + "item"),
+                                Uri = string.Format(ChangeUriFormat, Url, Uri.EscapeDataString(x.Element(ns + "Item").GetAttributeValue(ns + "item")), revision)
+                            })
+                        }
+                        : null;
+                }
             }
-            catch
-            {
-                return null;
-            }
+            return null;
         }
     }
 }

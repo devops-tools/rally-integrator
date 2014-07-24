@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using RallyIntegrator.Library.Handler;
+using RallyIntegrator.Library.Model;
 
 namespace RallyIntegrator.Library
 {
@@ -21,18 +23,22 @@ namespace RallyIntegrator.Library
             var tfsChangesets = revisions.Select(revision =>
             {
                 var tfsChangeset = new Tfs().GetChangeset(revision.ToString(CultureInfo.InvariantCulture));
-                tfsChangeset.Builds = TeamCity.GetBuilds(tfsChangeset.Revision);
+                if (tfsChangeset != null)
+                    tfsChangeset.Builds = TeamCity.GetBuilds(tfsChangeset.Revision);
                 return tfsChangeset;
             }).ToArray();
-            var changesets = tfsChangesets.Select(tfsChangeset => tfsChangeset.ToRallyChangeset(Ldap, Rally))
+            var changesets = tfsChangesets.Where(x => x!= null).Select(tfsChangeset => tfsChangeset.ToRallyChangeset(Ldap, Rally))
                 .Where(x => x != null && x.IsRelevant(Rally)).ToArray();
             foreach (var changeset in changesets)
-            {
-                var changesetObjectId = Rally.Add(changeset);
-                foreach (var build in changeset.Builds)
-                    Rally.Add(build, changesetObjectId);
-                Rally.Link(changesetObjectId, changeset.GetRallyReferences());
-            }
+                Process(changeset);
+        }
+
+        private static void Process(Changeset changeset)
+        {
+            var changesetObjectId = Rally.Add(changeset);
+            foreach (var build in changeset.Builds)
+                Rally.Add(build, changesetObjectId);
+            Rally.Link(changesetObjectId, changeset.GetRallyReferences());
         }
     }
 }

@@ -21,7 +21,7 @@ namespace RallyIntegrator.Library.Handler
                 };
                 directorySearcher.PropertiesToLoad.Add(LdapEmailProperty);
                 var searchResult = directorySearcher.FindOne();
-                if (searchResult != null)
+                if (searchResult != null && !Cache.ContainsKey(username))
                     Cache.Add(username, (string)searchResult.Properties[LdapEmailProperty][0]);
             }
             return Cache.ContainsKey(username) ? Cache[username] : null;
