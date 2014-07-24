@@ -17,9 +17,7 @@ namespace RallyIntegrator.Library
         public static void Process(IEnumerable<int> revisions)
         {
             revisions = revisions.ToArray();
-            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("Processing revisions {0}.", string.Join(",", revisions));
-            Console.ResetColor();
             var tfsChangesets = revisions.Select(revision =>
             {
                 var tfsChangeset = new Tfs().GetChangeset(revision.ToString(CultureInfo.InvariantCulture));
@@ -39,6 +37,13 @@ namespace RallyIntegrator.Library
             foreach (var build in changeset.Builds)
                 Rally.Add(build, changesetObjectId);
             Rally.Link(changesetObjectId, changeset.GetRallyReferences());
+            Console.WriteLine("Revision {0} ({1}) processed: {2} change{3}, {4} build{5}.",
+                changeset.Revision,
+                string.Join(", ", changeset.GetRallyReferences()),
+                changeset.Changes.Count(),
+                changeset.Changes.Count() > 1 ? "s" : string.Empty,
+                changeset.Builds.Count(),
+                changeset.Builds.Count() > 1 ? "s" : string.Empty);
         }
     }
 }

@@ -16,7 +16,6 @@ namespace RallyIntegrator.Library.Handler
         private static string Username { get { return ConfigurationManager.AppSettings.Get("RallyUsername"); } }
         private static string Password { get { return ConfigurationManager.AppSettings.Get("RallyPassword"); } }
         private static string Project { get { return ConfigurationManager.AppSettings.Get("RallyProject"); } }
-        
 
         public string GetObjectId(string objectType, string property, string value)
         {

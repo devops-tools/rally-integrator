@@ -25,9 +25,12 @@ namespace RallyIntegrator.Library
                     if (attmptCount == 3)
                         throw;
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Failed to download data from {0}. Retrying...", url);
+                    Console.WriteLine("Failed to download data from {0}.", url);
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine(ex.Message);
+                    var message = ex.Message;
+                    if (ex.InnerException != null && !string.IsNullOrWhiteSpace(ex.InnerException.Message))
+                        message = string.Concat(message, " ", ex.InnerException.Message);
+                    Console.WriteLine(message);
                     Console.ResetColor();
                     Console.WriteLine("Retrying...");
                 }
