@@ -92,7 +92,7 @@ namespace RallyIntegrator.Library.Handler
             }
         }
 
-        public string Add(string changesetObjectId, Change change)
+        public string Add(Change change, string changesetObjectId)
         {
             var changeJson = new DynamicJsonObject(new Dictionary<string, object>
                         {
@@ -145,7 +145,7 @@ namespace RallyIntegrator.Library.Handler
             {
                 var known = GetChanges(changesetObjectId).ToArray();
                 foreach (var change in changeset.Changes.Where(x => !known.Contains(x.Path)))
-                    Add(changesetObjectId, change);
+                    Add(change, changesetObjectId);
             }
             return changesetObjectId;
         }
