@@ -70,24 +70,29 @@ namespace RallyIntegrator.Library.Handler
         public void Link(string changesetObjectId, IEnumerable<string> references)
         {
             references = references.ToArray();
-            var x = new Dictionary<string, object>();
-            foreach (var reference in references)
+            string type;
+            var newArtifacts = references.ToDictionary(r => string.Format("_ref({0})", r), r => (object)GetReferenceObjectId(r, out type));
+
+            var existingArtifacts = GetArtifacts(changesetObjectId);
+            if (newArtifacts.Values.SequenceEqual(existingArtifacts))
             {
-                string type;
-                var objectId = GetReferenceObjectId(reference, out type);
-                if (objectId != null && type != null)
-                    x.Add(string.Format("_ref({0})", reference), objectId);
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("Links to {0} exist for changeset {1}.", string.Join(",", references), changesetObjectId);
+                Console.ResetColor();
             }
-            var toUpdate = new DynamicJsonObject();
-            toUpdate["Artifacts"] = new DynamicJsonObject(x);
-            var updateResult = Api.Update(changesetObjectId, toUpdate);
-            if (updateResult.Success)
-                Console.WriteLine("{0} linked to changeset {1}", string.Join(",", references), changesetObjectId);
             else
             {
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine("Failed to link {0} to changeset {1}", string.Join(",", references), changesetObjectId);
-                Console.ResetColor();
+                var toUpdate = new DynamicJsonObject();
+                toUpdate["Artifacts"] = new DynamicJsonObject(newArtifacts);
+                var updateResult = Api.Update(changesetObjectId, toUpdate);
+                if (updateResult.Success)
+                    Console.WriteLine("{0} linked to changeset {1}", string.Join(",", references), changesetObjectId);
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine("Failed to link {0} to changeset {1}", string.Join(",", references), changesetObjectId);
+                    Console.ResetColor();
+                }
             }
         }
 
@@ -116,7 +121,13 @@ namespace RallyIntegrator.Library.Handler
         public string Add(Changeset changeset)
         {
             var changesetObjectId = GetObjectId("changeset", "Revision", changeset.Revision);
-            if (changesetObjectId == null)
+            if (changesetObjectId != null)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("Changeset revision {0} exists as {1}.", changeset.Revision, changesetObjectId);
+                Console.ResetColor();
+            }
+            else
             {
                 var changesetJson = new DynamicJsonObject(new Dictionary<string, object>
                 {
@@ -180,7 +191,13 @@ namespace RallyIntegrator.Library.Handler
         public string Add(Build build, string changesetObjectId)
         {
             var buildObjectId = GetBuildObjectId(build);
-            if (buildObjectId == null)
+            if (buildObjectId != null)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("Build {0}/{1} exists as {2}.", build.BuildDefinition.Name, build.Number, buildObjectId);
+                Console.ResetColor();
+            }
+            else
             {
                 var buildDefinitionObjectId = Add(build.BuildDefinition);
                 if (buildDefinitionObjectId != null)
@@ -215,10 +232,19 @@ namespace RallyIntegrator.Library.Handler
         private IEnumerable<string> GetChanges(string changesetObjectId)
         {
             var json = WebHelper.DownloadString(string.Concat(changesetObjectId, "/Changes"), Username, Password);
-            var x = JObject.Parse(json)["QueryResult"];
-            return (int) x["TotalResultCount"] > 0
-                ? x["Results"].Select(change => (string)change["PathAndFilename"])
-                : new string[]{};
+            var queryResult = JObject.Parse(json)["QueryResult"];
+            return (int)queryResult["TotalResultCount"] > 0
+                ? queryResult["Results"].Select(x => x["PathAndFilename"].Value<string>())
+                : Enumerable.Empty<string>();
+        }
+
+        private IEnumerable<string> GetArtifacts(string changesetObjectId)
+        {
+            var json = WebHelper.DownloadString(string.Concat(changesetObjectId, "/Artifacts"), Username, Password);
+            var queryResult = JObject.Parse(json)["QueryResult"];
+            return (int)queryResult["TotalResultCount"] > 0
+                ? queryResult["Results"].Select(x => x["_ref"].Value<string>())
+                : Enumerable.Empty<string>();
         }
     }
 }

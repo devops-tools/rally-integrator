@@ -53,13 +53,14 @@ namespace RallyIntegrator.Library
         {
             var rallyRefs = changeset.GetRallyReferences().ToArray();
             string type;
-            var accessibleReferenceFound = rallyRefs.Any(reference => rally.GetReferenceObjectId(reference, out type) != null);
+            var accessibleReferenceFound = rallyRefs.Any(x => rally.GetReferenceObjectId(x, out type) != null);
             return accessibleReferenceFound;
         }
 
         public static bool IsRelevant(this Changeset changeset, Handler.Rally rally)
         {
-            return changeset.Changes.Any(x => x.Path.StartsWith(Tfs.Repository))
+            return changeset != null
+                && changeset.Changes.Any(x => x.Path.StartsWith(Tfs.Repository))
                 && changeset.ContainsRallyReference()
                 && changeset.ContainsAccessibleRallyReference(rally);
         }

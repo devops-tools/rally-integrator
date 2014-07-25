@@ -18,17 +18,22 @@ namespace RallyIntegrator.Library
         {
             revisions = revisions.ToArray();
             Console.WriteLine("Processing revisions {0}.", string.Join(",", revisions));
-            var tfsChangesets = revisions.Select(revision =>
+            var tfs = new Tfs();
+            var changesets = revisions.Select(x => tfs.GetChangeset(x.ToString(CultureInfo.InvariantCulture)))
+                .Where(x => x.IsRelevant(Rally))
+                .ToList();
+            changesets.ForEach(x =>
             {
-                var tfsChangeset = new Tfs().GetChangeset(revision.ToString(CultureInfo.InvariantCulture));
-                if (tfsChangeset != null)
-                    tfsChangeset.Builds = TeamCity.GetBuilds(tfsChangeset.Revision);
-                return tfsChangeset;
-            }).ToArray();
-            var changesets = tfsChangesets.Where(x => x!= null).Select(tfsChangeset => tfsChangeset.ToRallyChangeset(Ldap, Rally))
-                .Where(x => x != null && x.IsRelevant(Rally)).ToArray();
-            foreach (var changeset in changesets)
+                var changeset = x.ToRallyChangeset(Ldap, Rally);
+                changeset.Builds = TeamCity.GetBuilds(changeset.Revision);
                 Process(changeset);
+            });
+            if (!changesets.Any())
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("No relevant revisions in set: {0}.", string.Join(",", revisions));
+                Console.ResetColor();
+            }
         }
 
         private static void Process(Changeset changeset)
