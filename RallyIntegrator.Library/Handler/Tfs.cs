@@ -18,8 +18,7 @@ namespace RallyIntegrator.Library.Handler
 
         public Changeset GetChangeset(string revision)
         {
-            var url = string.Format(ChangesetUriFormat, Url, revision);
-            var root = XDocument.Parse(WebHelper.DownloadString(url, Username, Password), LoadOptions.None).Root;
+            var root = XDocument.Parse(WebHelper.DownloadString(string.Format(ChangesetUriFormat, Url, revision, "false"), Username, Password), LoadOptions.None).Root;
             if (root != null)
             {
                 var ns = root.GetDefaultNamespace();
@@ -30,7 +29,7 @@ namespace RallyIntegrator.Library.Handler
                         ? new Changeset
                         {
                             Revision = revision,
-                            Uri = url,
+                            Uri = string.Format(ChangesetUriFormat, Url, revision, "true"),
                             Author = root.GetAttributeValue(ns + "cmtr"),
                             CommitTimestamp = root.GetAttributeValue(ns + "date"),
                             Message = root.GetElementValue(ns + "Comment"),
