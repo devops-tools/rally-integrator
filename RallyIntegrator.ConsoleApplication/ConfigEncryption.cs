@@ -1,15 +1,11 @@
-﻿#if !DEBUG
-#define ENCRYPT_CONFIG
-#endif
-
-using System.Configuration;
+﻿using System.Configuration;
 using System.Diagnostics;
 
 namespace RallyIntegrator.ConsoleApplication
 {
     static class ConfigEncryption
     {
-        [Conditional("ENCRYPT_CONFIG")]
+        [Conditional("!DEBUG")]
         internal static void EncryptAppSettings()
         {
             EncryptConfigSection("appSettings");
