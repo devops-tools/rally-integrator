@@ -18,7 +18,7 @@ namespace RallyIntegrator.Library
             var username = tfsChangeset.Author.Split('\\').Last();
             var email = ldap.GetEmail(username);
             var rallyUserId = rally.GetObjectId("user", "EmailAddress", email) ?? rally.GetObjectId("user", "EmailAddress", email.ToLower());
-            var rallyRepositoryId = rally.GetObjectId("scmrepository", "Name", Tfs.Repository);
+            var rallyRepositoryId = rally.GetObjectId("scmrepository", "Name", Tfs.Config.Repository);
             return new Changeset
             {
                 Author = rallyUserId,
@@ -60,7 +60,7 @@ namespace RallyIntegrator.Library
         public static bool IsRelevant(this Changeset changeset, Handler.Rally rally)
         {
             return changeset != null
-                && changeset.Changes.Any(x => x.Path.StartsWith(Tfs.Repository))
+                && changeset.Changes.Any(x => x.Path.StartsWith(Tfs.Config.Repository))
                 && changeset.ContainsRallyReference()
                 && changeset.ContainsAccessibleRallyReference(rally);
         }

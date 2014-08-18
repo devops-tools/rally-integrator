@@ -17,7 +17,9 @@ namespace RallyIntegrator.ConsoleApplication
 
         public static void Main(string[] args)
         {
-            ConfigEncryption.EncryptAppSettings();
+            ConfigEncryption.EncryptConfigSection("integrationProviders/rally");
+            ConfigEncryption.EncryptConfigSection("integrationProviders/tfs");
+            ConfigEncryption.EncryptConfigSection("integrationProviders/teamcity");
 
             var showHelp = false;
             var processPreceedingChangesets = false;

@@ -4,24 +4,19 @@ using System.Configuration;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
+using RallyIntegrator.Library.Config;
 using RallyIntegrator.Library.Model;
 
 namespace RallyIntegrator.Library.Handler
 {
     public class TeamCity
     {
-        private static string Username { get { return ConfigurationManager.AppSettings.Get("TeamCityUsername"); } }
-        private static string Password { get { return ConfigurationManager.AppSettings.Get("TeamCityPassword"); } }
-        private static string Url { get { return ConfigurationManager.AppSettings.Get("TeamCityUrl"); } }
-        private static string ChangeUriFormat { get { return ConfigurationManager.AppSettings.Get("TeamCityChangeUriFormat"); } }
-        private static string BuildUriFormat { get { return ConfigurationManager.AppSettings.Get("TeamCityBuildUriFormat"); } }
-        private static string BuildTypeUriFormat { get { return ConfigurationManager.AppSettings.Get("TeamCityBuildTypeUriFormat"); } }
-        private static string ChangeBuildsUriFormat { get { return ConfigurationManager.AppSettings.Get("TeamCityChangeBuildsUriFormat"); } }
+        private static readonly TeamCityApiSection Config = (TeamCityApiSection)ConfigurationManager.GetSection("integrationProviders/teamcity");
         private static readonly Dictionary<string, BuildDefinition> BuildDefinitionCache = new Dictionary<string, BuildDefinition>();
 
         private string GetChangeId(string vcsRevision)
         {
-            var xml = WebHelper.DownloadString(string.Format(ChangeUriFormat, Url, vcsRevision), Username, Password);
+            var xml = WebHelper.DownloadString(string.Format(Config.ChangeUriFormat, Config.Url, vcsRevision), Config.Username, Config.Password);
             var root = XDocument.Parse(xml).Root;
             if (root != null)
             {
@@ -33,7 +28,7 @@ namespace RallyIntegrator.Library.Handler
 
         private IEnumerable<string> GetBuildIds(string changeId)
         {
-            var xml = WebHelper.DownloadString(string.Format(ChangeBuildsUriFormat, Url, changeId), Username, Password);
+            var xml = WebHelper.DownloadString(string.Format(Config.ChangeBuildsUriFormat, Config.Url, changeId), Config.Username, Config.Password);
             var root = XDocument.Parse(xml).Root;
             return root != null
                 ? root.Elements("build").Select(build => build.GetAttributeValue("id"))
@@ -44,7 +39,7 @@ namespace RallyIntegrator.Library.Handler
         {
             if (!BuildDefinitionCache.ContainsKey(buildTypeId))
             {
-                var xml = WebHelper.DownloadString(string.Format(BuildTypeUriFormat, Url, buildTypeId), Username, Password);
+                var xml = WebHelper.DownloadString(string.Format(Config.BuildTypeUriFormat, Config.Url, buildTypeId), Config.Username, Config.Password);
                 var root = XDocument.Parse(xml).Root;
                 if (root != null)
                 {
@@ -67,7 +62,7 @@ namespace RallyIntegrator.Library.Handler
 
         private Build GetBuild(string buildId)
         {
-            var xml = WebHelper.DownloadString(string.Format(BuildUriFormat, Url, buildId), Username, Password);
+            var xml = WebHelper.DownloadString(string.Format(Config.BuildUriFormat, Config.Url, buildId), Config.Username, Config.Password);
             var root = XDocument.Parse(xml).Root;
             if (root != null)
             {

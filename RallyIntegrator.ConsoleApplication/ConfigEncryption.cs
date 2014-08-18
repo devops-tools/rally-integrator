@@ -1,31 +1,24 @@
-﻿#if !DEBUG
-#define ENCRYPT_CONFIG
-#endif
-
-using System.Configuration;
+﻿using System.Configuration;
 using System.Diagnostics;
 
 namespace RallyIntegrator.ConsoleApplication
 {
     static class ConfigEncryption
     {
-        [Conditional("ENCRYPT_CONFIG")]
-        internal static void EncryptAppSettings()
+        internal static void EncryptConfigSection(string sectionKey)
         {
-            EncryptConfigSection("appSettings");
-        }
-
-        private static void EncryptConfigSection(string sectionKey)
-        {
-            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            var section = config.GetSection(sectionKey);
-            if (section != null
-                && !section.SectionInformation.IsProtected
-                && !section.ElementInformation.IsLocked)
+            if (!Debugger.IsAttached)
             {
-                section.SectionInformation.ProtectSection("DataProtectionConfigurationProvider");
-                section.SectionInformation.ForceSave = true;
-                config.Save(ConfigurationSaveMode.Full);
+                var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var section = config.GetSection(sectionKey);
+                if (section != null
+                    && !section.SectionInformation.IsProtected
+                    && !section.ElementInformation.IsLocked)
+                {
+                    section.SectionInformation.ProtectSection("DataProtectionConfigurationProvider");
+                    section.SectionInformation.ForceSave = true;
+                    config.Save(ConfigurationSaveMode.Full);
+                }
             }
         }
     }

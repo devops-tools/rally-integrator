@@ -5,17 +5,16 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using Rally.RestApi;
+using RallyIntegrator.Library.Config;
 using RallyIntegrator.Library.Model;
 
 namespace RallyIntegrator.Library.Handler
 {
     public class Rally
     {
+        private static readonly RallyApiSection Config = (RallyApiSection)ConfigurationManager.GetSection("integrationProviders/rally");
         private static RallyRestApi _api;
-        private static RallyRestApi Api { get { return _api ?? (_api = new RallyRestApi(Username, Password)); } }
-        private static string Username { get { return ConfigurationManager.AppSettings.Get("RallyUsername"); } }
-        private static string Password { get { return ConfigurationManager.AppSettings.Get("RallyPassword"); } }
-        private static string Project { get { return ConfigurationManager.AppSettings.Get("RallyProject"); } }
+        private static RallyRestApi Api { get { return _api ?? (_api = new RallyRestApi(Config.Username, Config.Password)); } }
 
         public string GetObjectId(string objectType, string property, string value)
         {
@@ -169,7 +168,7 @@ namespace RallyIntegrator.Library.Handler
                 {
                     { "Name", buildDefinition.Name },
                     { "Description", buildDefinition.Description },
-                    { "Project", Project },
+                    { "Project", string.Format(Config.ProjectUriFormat, Config.Url, Config.Project) },
                     { "Uri", buildDefinition.Uri }
                 });
                 var createResult = Api.Create("buildDefinition", buildDefinitionJson);
@@ -231,7 +230,7 @@ namespace RallyIntegrator.Library.Handler
 
         private IEnumerable<string> GetChanges(string changesetObjectId)
         {
-            var json = WebHelper.DownloadString(string.Concat(changesetObjectId, "/Changes"), Username, Password);
+            var json = WebHelper.DownloadString(string.Concat(changesetObjectId, "/Changes"), Config.Username, Config.Password);
             var queryResult = JObject.Parse(json)["QueryResult"];
             return (int)queryResult["TotalResultCount"] > 0
                 ? queryResult["Results"].Select(x => x["PathAndFilename"].Value<string>())
@@ -240,7 +239,7 @@ namespace RallyIntegrator.Library.Handler
 
         private IEnumerable<string> GetArtifacts(string changesetObjectId)
         {
-            var json = WebHelper.DownloadString(string.Concat(changesetObjectId, "/Artifacts"), Username, Password);
+            var json = WebHelper.DownloadString(string.Concat(changesetObjectId, "/Artifacts"), Config.Username, Config.Password);
             var queryResult = JObject.Parse(json)["QueryResult"];
             return (int)queryResult["TotalResultCount"] > 0
                 ? queryResult["Results"].Select(x => x["_ref"].Value<string>())
