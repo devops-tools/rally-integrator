@@ -17,6 +17,8 @@ namespace RallyIntegrator.ConsoleApplication
 
         public static void Main(string[] args)
         {
+            ConfigEncryption.EncryptAppSettings();
+
             var showHelp = false;
             var processPreceedingChangesets = false;
             const int preceedingChangesetCount = 20;
