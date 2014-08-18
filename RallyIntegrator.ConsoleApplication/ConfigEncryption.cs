@@ -5,7 +5,11 @@ namespace RallyIntegrator.ConsoleApplication
 {
     static class ConfigEncryption
     {
-        [Conditional("!DEBUG")]
+        #if !DEBUG
+        #define ENCRYPT_CONFIG
+        #endif
+
+        [Conditional("ENCRYPT_CONFIG")]
         internal static void EncryptAppSettings()
         {
             EncryptConfigSection("appSettings");
